@@ -1,0 +1,26 @@
+@relation compactiv
+@attribute lread real[0.0,1845.0]
+@attribute lwrite real[0.0,575.0]
+@attribute scall real[109.0,12493.0]
+@attribute sread real[6.0,5318.0]
+@attribute swrite real[7.0,5456.0]
+@attribute fork real[0.0,20.120001]
+@attribute exec real[0.0,59.560001]
+@attribute rchar real[278.0,2526649.0]
+@attribute wchar real[1498.0,1801623.0]
+@attribute pgout real[0.0,81.440002]
+@attribute ppgout real[0.0,184.2]
+@attribute pgfree real[0.0,523.0]
+@attribute pgscan real[0.0,1237.0]
+@attribute atch real[0.0,211.580002]
+@attribute pgin real[0.0,141.2]
+@attribute ppgin real[0.0,292.61]
+@attribute pflt real[0.0,899.8]
+@attribute vflt real[0.2,1365.0]
+@attribute runqsz real[1.0,2823.0]
+@attribute freemem real[55.0,12027.0]
+@attribute freeswap real[2.0,2243187.0]
+@attribute usr real[0.0,99.0]
+@inputs lread, lwrite, scall, sread, swrite, fork, exec, rchar, wchar, pgout, ppgout, pgfree, pgscan, atch, pgin, ppgin, pflt, vflt, runqsz, freemem, freeswap
+@output usr
+@data
