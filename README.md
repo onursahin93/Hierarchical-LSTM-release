@@ -5,6 +5,8 @@ This repository is the implementation of Hierarchical-LSTM architecture.
 torch==1.13.1 is used in the implementation.
 
 ## Code Structure
+- The code structure is provided in the code_structure_tree.txt in detail.
+
 - Config folder manages the argument operations. config_manager.py is the main part of the Config folder, which combines the other config files.
 - Agent folder contains the implementation of the algorithm. Agent/Algorithm/HierarchicalLSTM/hierarchical_lstm_agent.py includes the functions of Hierarchical-LSTM such as learn(), \_\_call__, detach_hiddens() as well as the HierarchicalLSTMModel as its network. Agent/Models/HierarchicalLSTM/hierarchical_lstm_model.py contains the network of the Hierarchical-LSTM architecture.
 - Data folder contains the files for reading and preparing datasets.
