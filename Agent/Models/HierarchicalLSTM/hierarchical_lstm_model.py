@@ -4,6 +4,8 @@ from torch.autograd import Variable
 import time
 import copy
 from Agent.Models.base_model import BaseModel
+from Agent.Models.HierarchicalLSTM.LSTM_cell_with_peephole import LSTMCellPeephole
+
 
 class HierarchicalLSTMModel(BaseModel):
     def __init__(self, params):
@@ -13,8 +15,6 @@ class HierarchicalLSTMModel(BaseModel):
             input_size: variable dimension of each time
             hidden_size: dimension of hidden_state
             window_length: dimension of window length for presence vector
-            mask_size: dimension of masking vector
-            X_mean: the mean of the historical input data
         """
 
         super(HierarchicalLSTMModel, self).__init__(params)
@@ -25,10 +25,14 @@ class HierarchicalLSTMModel(BaseModel):
         self.use_presence_patterns = params.use_presence_patterns
         self.is_fc_tilde_different = params.is_fc_tilde_different
         self.temperature = torch.tensor([params.temperature], device=self.device, dtype=torch.float32)
+        self.is_peephole = params.is_peephole
         # self.hidden_size = hidden_size
         # self.input_size = input_size
         # self.batch_size = batch_size
-        self.lstm_list = nn.ModuleList([torch.nn.LSTMCell(input_size=self.input_size, hidden_size=self.rnn_hidden_size, bias=True) for _ in range(self.lstm_number)])
+        if not self.is_peephole:  # default case, without peephole connections
+            self.lstm_list = nn.ModuleList([torch.nn.LSTMCell(input_size=self.input_size, hidden_size=self.rnn_hidden_size, bias=True) for _ in range(self.lstm_number)])
+        else:
+            self.lstm_list = nn.ModuleList([LSTMCellPeephole(input_size=self.input_size, hidden_size=self.rnn_hidden_size) for _ in range(self.lstm_number)])
         self.lstm_c_list, self.lstm_h_list = [], []
         # self.init_lstm_list(lstm_number=self.lstm_number)
         self.reset_lstm_hiddens()
@@ -188,17 +192,7 @@ class HierarchicalLSTMModel(BaseModel):
         window_input_mask = presence_mask[1:]
 
         valid_lstm_idx = self.get_valid_lstm_ids(window_input_mask)
-        # valid_lstm_idx = tree_lstm.get_valid_lstm_ids(window_input_mask)
         valid_leaf_lstm_idx = [id for id in valid_lstm_idx if id not in [0]]
-
-        # print(f'Main Input Mask : {main_input_mask.data}, Main Input : {main_input.data}')
-        # print(f'Mask : {window_input_mask.data}, Input : {window_input.data}')
-        # for lstm_id in tree_lstm.get_valid_lstm_ids(window_input_mask):
-        #     valid_window_inputs = self.get_valid_input_sequence(window_input, lstm_id, window_input_mask)
-        #     valid_input_mask = self.get_valid_mask(lstm_id=lstm_id, presence=window_input_mask)
-        #     print(f'{lstm_id}  : valid_input_mask : {valid_input_mask} | Valid data : {valid_window_inputs}')
-
-
 
         if main_input_mask:
             # print('main_input exists')
@@ -215,7 +209,6 @@ class HierarchicalLSTMModel(BaseModel):
 
         combined_hidden = self.weighted_sum_hiddens(valid_lstm_idx, window_input_mask)
         output = self.FC_hat(combined_hidden)
-        # tree_lstm.detach_hiddens()
         return output
 
 

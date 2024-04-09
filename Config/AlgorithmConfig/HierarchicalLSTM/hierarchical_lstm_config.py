@@ -4,7 +4,8 @@ default_dict = {
     "use_presence_patterns": True,
     "is_fc_tilde_different": True,
     "temperature": 10.0,
-    "different_learning_rates_for_lstms": False
+    "different_learning_rates_for_lstms": False,
+    "is_peephole": False
 }
 
 import argparse
@@ -38,6 +39,11 @@ config_parser.add_argument('--different-learning-rates-for-lstms',
                             type=str2bool,
                             default=None,
                             help='overrides the default different_learning_rates_for_lstms of the algorithm')
+
+config_parser.add_argument('--is-peephole',
+                            type=str2bool,
+                            default=None,
+                            help='use peephole connections or not')
 
 
 

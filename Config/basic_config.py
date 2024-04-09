@@ -1,4 +1,4 @@
-basic_config_dict = {"use_gpu": False,
+basic_config_dict = {"use_gpu": True,
                      "device": "cpu",
                      "torch_deterministic": True,
                      "seed": 1223334444}

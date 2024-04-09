@@ -3,8 +3,9 @@ learning_config_dict = {"optimizer": "Adam",
                         "normal_std": 0.01,
                         "init": "xavier_normal",
                         "learning_rate": 1e-4,
-                        "is_decay": True,
-                        "gamma": 0.95}
+                        "is_decay": False,
+                        "gamma": 1.0,
+                        "is_y_always_exists": True}
 
 initiation_list = ["normal",
                    "uniform",

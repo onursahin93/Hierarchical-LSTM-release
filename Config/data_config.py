@@ -5,7 +5,9 @@ data_config_dict = {
     "missing_ratio": 0.1,
     "n_step": 1,
     "is_batch": False,
-    "is_normalize": True}
+    "is_normalize": True,
+    "missingness_type": "MCAR" #MCAR, MNAR, MAR
+   }
 
 
 
@@ -25,6 +27,11 @@ data_config_parser.add_argument('--is-normalize',
                                 type=str2bool,
                                 default=None,
                                 help='use normalization or not')
+
+data_config_parser.add_argument('--missingness-type',
+                                type=str,
+                                default=None,
+                                help='MCAR, MNAR, MAR')
 
 
 

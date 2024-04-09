@@ -1,10 +1,11 @@
 import numpy as np
-import pandas as pd
+# import pandas as pd
 import warnings
 import torch
 from argparse import Namespace
 from Config.constants import MAIN_DIR
 from Data.DataReader.base_data_reader import BaseDataReader
+import random
 
 
 
@@ -14,6 +15,7 @@ class KinematicsDataReader(BaseDataReader):
         super(KinematicsDataReader, self).__init__(params=params)
         self.device = params.device
         self.data_path = f"{MAIN_DIR}/Data/old_data/Kinematics/kin8nm.data"
+        self.label_index = 8
         self.n_step = 0#params.n_step
         self.require_presence_pattern = False
         self.raw = torch.from_numpy(np.genfromtxt(self.data_path, delimiter=','))
@@ -36,17 +38,99 @@ class KinematicsDataReader(BaseDataReader):
         self.x_mask_test = self.raw_mask[self.train_length:-self.n_step] if self.n_step > 0 else self.raw_mask[self.train_length:]
         self.y_mask_test = self.raw_mask[self.train_length + self.n_step:]
 
-        # print(self.train_length)
-        # print(self.test_length)
-        # print(self.x_t_train.shape)
-        # print(self.y_t_train.shape)
-        # print(self.x_t_test.shape)
-        # print(self.y_t_test.shape)
-        #
-        # print(self.x_mask_train.shape)
-        # print(self.y_mask_train.shape)
-        # print(self.x_mask_test.shape)
-        # print(self.y_mask_test.shape)
+        self.always_true_mask = torch.rand(self.raw.shape[0]) > -1
+        if self.missingness_type == "MCAR":
+            self.raw_mask = torch.rand(self.raw.shape[0]) > self.missing_ratio
+
+        elif self.missingness_type == "MNAR_v0":
+            """
+                Missingness related to the unobserved data
+            """
+            # MNAR begin
+            raw_label = self.raw[:, 8]
+            sorted_raw_label = np.sort(raw_label)
+            low_value = sorted_raw_label[int(np.round(self.raw.shape[0] * self.missing_ratio))]
+            high_value = sorted_raw_label[int(np.round(self.raw.shape[0] * (1 - self.missing_ratio)))]
+
+            mask_list = []
+            for idx in range(self.raw.shape[0]):
+                if raw_label[idx] < low_value or raw_label[idx] > high_value:
+                    if random.random() > 0.5:
+                        mask_list.append(0)
+                    else:
+                        mask_list.append(1)
+                else:
+                    mask_list.append(1)
+
+            self.raw_mask = torch.tensor(mask_list, dtype=torch.bool)
+
+        elif self.missingness_type == "MNAR":
+            # completely delete < low or > high
+            # MNAR begin
+            raw_label = self.raw[:, 8]
+            sorted_raw_label = np.sort(raw_label)
+            low_value = sorted_raw_label[int(np.round(self.raw.shape[0] * self.missing_ratio * 0.5))]
+            high_value = sorted_raw_label[int(np.round(self.raw.shape[0] * (1 - self.missing_ratio * 0.5)))]
+
+            mask_list = []
+            for idx in range(self.raw.shape[0]):
+                if raw_label[idx] < low_value or raw_label[idx] > high_value:
+                    if random.random() > -1:  # always True
+                        mask_list.append(0)
+                    else:
+                        mask_list.append(1)
+                else:
+                    mask_list.append(1)
+
+            # self.raw_mask = torch.rand(self.raw.shape[0]) > self.missing_ratio # MCAR
+            self.raw_mask = torch.tensor(mask_list, dtype=torch.bool)
+
+        elif self.missingness_type == "MAR":
+            """
+                Missingness related to the observed data
+            """
+            # MAR begins
+
+            missingness_done = False
+            raw_label = self.raw[:, 8]
+            mask_list = []
+            mask_np = np.ones(self.raw.shape[0])
+
+            max_delete_window = 3
+            sorted_raw_label = np.sort(raw_label)
+            low_value = sorted_raw_label[int(np.round(self.raw.shape[0] * self.missing_ratio / 2))]
+            high_value = sorted_raw_label[int(np.round(self.raw.shape[0] * (1 - self.missing_ratio / 2)))]
+            while not missingness_done:
+                for idx in range(self.raw.shape[0]):
+                    if mask_np[idx]:  # if data idx exists
+                        if raw_label[idx] < low_value or raw_label[idx] > high_value:
+                            for next_idx in range(idx + 1, idx + max_delete_window + 1):  # For example: idx=5, max_delete_window=3, next_idx = 6 7 8
+                                if (next_idx < (self.raw.shape[0])) and (mask_np[next_idx] == True):  # next_idx is in valid range and exists
+                                    if random.random() > 0.75:
+                                        mask_np[next_idx] = 0
+                                        break
+
+                        if (1 - (mask_np.sum() / self.raw.shape[0])) >= self.missing_ratio:
+                            missingness_done = True
+                            print("Done")
+                            break
+
+            print(mask_np.sum() / self.raw.shape[0])
+            self.raw_mask = torch.from_numpy(mask_np).to(dtype=torch.bool)
+            # MAR ends
+
+        self.x_mask_train = self.raw_mask[:self.train_length]
+        if params.is_y_always_exists:
+            self.y_mask_train = self.always_true_mask[self.n_step:self.train_length + self.n_step]
+        else:
+            self.y_mask_train = self.raw_mask[self.n_step:self.train_length + self.n_step]
+
+        self.x_mask_test = self.raw_mask[self.train_length:-self.n_step] if self.n_step > 0 else self.raw_mask[self.train_length:]
+        if params.is_y_always_exists:
+            self.y_mask_test = self.always_true_mask[self.train_length + self.n_step:]
+        else:
+            self.y_mask_test = self.raw_mask[self.train_length + self.n_step:]
+
 
         self.calculate_deltas()
         if params.algorithm == "HierarchicalLSTM":

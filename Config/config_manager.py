@@ -10,7 +10,7 @@ from Config.utils.utils import str2bool
 from utils.utils import print_and_log
 import os
 from Config.basic_config import basic_config_dict as basic_config
-from Config.logger_config import log_config_dict as log_config #TODO: check name
+from Config.logger_config import log_config_dict as log_config
 from Config.data_config import data_config_dict as data_config
 from Config.data_config import get_data_config
 from Config.interaction_config import interaction_config_dict as interaction_config
@@ -89,7 +89,7 @@ class ConfigManager():
             if not self.args.id:
                 print(' ' * 26 + k + ': ' + str(v))
             else:
-                print_and_log(self.args.params_file, k + ': ' + str(v))
+                print_and_log(self.args.params_file, k + ': ' + str(v), is_print=True)
 
         # print("debug")
 
